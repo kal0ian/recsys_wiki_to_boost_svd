@@ -4,6 +4,8 @@ USERS_COUNT = 943
 ITEMS_COUNT = 1682
 cimport numpy as np  # noqa
 import numpy as np
+from datetime import timedelta
+import time
 from six.moves import range
 
 from surprise.prediction_algorithms.predictions import PredictionImpossible
@@ -35,9 +37,13 @@ class SVD():
         self.verbose = verbose
 
     def fit(self, trainset):
+        print("Training started...")
+        start_time = time.time()
         self.trainset = trainset
 
         self.sgd(trainset)
+        elapsed = time.time() - start_time
+        print("Training finished in: ", str(timedelta(seconds=elapsed)))
 
     def sgd(self, trainset):
         artificial_lr = (sum(trainset[:,3]==0)/sum(trainset[:,3]==1))* self.lr_bu

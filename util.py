@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+from datetime import timedelta
+import time
 
 from sklearn.model_selection import train_test_split
 
@@ -31,6 +33,7 @@ def load_movies_data():
 
 def load_similarities():
     print("Loading similarities...")
+    start_time = time.time()
     similarities = pd.read_csv("item_similarities.csv")
     similarities['0'] = similarities['0']
     similarities['1'] = similarities['1']
@@ -40,19 +43,22 @@ def load_similarities():
         if int(row['0']) != int(row['1']):
             similarities_arr[int(row['0']), int(row['1'])] = row['2']
 
-    print("Loading similarities completed")
+    elapsed = time.time() - start_time
+    print("Loading similarities completed in: ",
+          str(timedelta(seconds=elapsed)))
     return similarities_arr
 
 
 def generate_artificial_ratings(train_set, similarities):
     print("Loading artificial ratings...")
+    start_time = time.time()
     artificial = np.zeros((USERS_COUNT, ITEMS_COUNT))
     for item in range(ITEMS_COUNT):
         for user in range(USERS_COUNT):
             rating = 0
             all_user_ratings = train_set[train_set[:, 0] == user]
             sum_sim = 0
-            for u, i, r in all_user_ratings:
+            for u, i, r, label in all_user_ratings:
                 sim1 = similarities[item, int(i)]
                 if (sim1 < THRESHOLD):
                     continue
@@ -68,6 +74,10 @@ def generate_artificial_ratings(train_set, similarities):
         for user in range(USERS_COUNT):
             if (artificial[user, item] != -1):
                 artificial_data.append([user, item, artificial[user, item]])
-    print("Loading artificial ratings completed.")
-    return np.column_stack(np.array(artificial_data),
-                           np.zeros(artificial_data.shape[0]))
+
+    elapsed = time.time() - start_time
+    print("Loading artificial ratings completed in: ",
+          str(timedelta(seconds=elapsed)))
+    artificial_data = np.array(artificial_data)
+    return np.column_stack((artificial_data,
+                            np.zeros(artificial_data.shape[0])))
