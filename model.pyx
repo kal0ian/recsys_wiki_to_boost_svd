@@ -36,7 +36,7 @@ class SVD():
 
     def fit(self, trainset):
         self.trainset = trainset
-        
+
         self.sgd(trainset)
 
     def sgd(self, trainset):
@@ -81,7 +81,7 @@ class SVD():
             if self.verbose:
                 print("Processing epoch {}".format(current_epoch))
             for u, i, r, label in trainset:
-                if not label:
+                if label:
                     # compute current error
                     dot = 0  # <q_i, p_u>
                     for f in range(self.n_factors):
@@ -100,7 +100,7 @@ class SVD():
                         pu[u, f] += lr_pu * (err * qif - reg_pu * puf)
                         qi[i, f] += lr_qi * (err * puf - reg_qi * qif)
                 else:
-                    
+
                     # compute current error
                     dot = 0  # <q_i, p_u>
                     for f in range(self.n_factors):
@@ -124,12 +124,16 @@ class SVD():
         self.pu = pu
         self.qi = qi
 
+    def test(self, test_set):
+        return np.array([(user_rating, self.estimate(user_id, item_id))
+                for (user_id, item_id, user_rating) in test_set])
+
     def estimate(self, u, i):
         # Should we cythonize this as well?
 
         known_user = u in self.trainset[:, 0]
         known_item = i in self.trainset[:, 1]
-        
+
         u = int(u)
         i = int(i)
 

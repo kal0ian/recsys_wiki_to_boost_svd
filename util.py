@@ -11,11 +11,14 @@ THRESHOLD = 0.05
 
 
 def load_data(data_removed=0.95, test_size=0.20):
+    print("Loading data...")
     all_data = load_movies_data()
     train_set, _ = train_test_split(all_data, test_size=data_removed)
     sparcity = 1 - (len(train_set) / (USERS_COUNT * ITEMS_COUNT))
-    print("Sparcitiy: %.4f" % sparcity)
-    return train_test_split(train_set, test_size=.20)
+    print("Loading data completed. Sparcitiy: %.4f" % sparcity)
+    train_set, test_set = train_test_split(train_set, test_size=.20)
+    train_set = np.column_stack((train_set, np.ones(train_set.shape[0])))
+    return train_set, test_set, sparcity
 
 
 def load_movies_data():
@@ -23,10 +26,11 @@ def load_movies_data():
     data[0] = pd.to_numeric(data[0]) - 1
     data[1] = pd.to_numeric(data[1]) - 1
     del data[3]
-    return data.values()
+    return data.values
 
 
 def load_similarities():
+    print("Loading similarities...")
     similarities = pd.read_csv("item_similarities.csv")
     similarities['0'] = similarities['0']
     similarities['1'] = similarities['1']
@@ -36,10 +40,12 @@ def load_similarities():
         if int(row['0']) != int(row['1']):
             similarities_arr[int(row['0']), int(row['1'])] = row['2']
 
+    print("Loading similarities completed")
     return similarities_arr
 
 
 def generate_artificial_ratings(train_set, similarities):
+    print("Loading artificial ratings...")
     artificial = np.zeros((USERS_COUNT, ITEMS_COUNT))
     for item in range(ITEMS_COUNT):
         for user in range(USERS_COUNT):
@@ -62,11 +68,6 @@ def generate_artificial_ratings(train_set, similarities):
         for user in range(USERS_COUNT):
             if (artificial[user, item] != -1):
                 artificial_data.append([user, item, artificial[user, item]])
-    return np.array(artificial_data)
-
-
-def stack_real_and_artificial_data(real_data, artificial_data):
-    artificial_data = np.column_stack((artificial_data,
-                                       np.zeros(artificial_data.shape[0])))
-    real_data = np.column_stack((real_data, np.ones(real_data.shape[0])))
-    return np.random.shuffle(np.vstack((artificial_data, real_data)))
+    print("Loading artificial ratings completed.")
+    return np.column_stack(np.array(artificial_data),
+                           np.zeros(artificial_data.shape[0]))
