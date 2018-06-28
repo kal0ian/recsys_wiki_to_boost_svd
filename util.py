@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from datetime import timedelta
 import time
+from itertools import product
 
 from sklearn.model_selection import train_test_split
 
@@ -9,7 +10,7 @@ from surprise import Dataset
 
 USERS_COUNT = 943
 ITEMS_COUNT = 1682
-THRESHOLD = 0.05
+THRESHOLD = 0.1
 
 
 def load_data(data_removed=0.95, test_size=0.20):
@@ -49,30 +50,41 @@ def load_similarities():
     return similarities_arr
 
 
-def generate_artificial_ratings(train_set, similarities):
+def generate_artificial_ratings(train_set, test_set, similarities):
     print("Loading artificial ratings...")
     start_time = time.time()
     artificial = np.zeros((USERS_COUNT, ITEMS_COUNT))
-    for item in range(ITEMS_COUNT):
-        for user in range(USERS_COUNT):
-            rating = 0
-            all_user_ratings = train_set[train_set[:, 0] == user]
-            sum_sim = 0
-            for u, i, r, label in all_user_ratings:
-                sim1 = similarities[item, int(i)]
-                if (sim1 < THRESHOLD):
-                    continue
-                rating = rating + r * sim1
-                sum_sim = sum_sim + sim1
-            if sum_sim == 0:
-                artificial[user, item] = -1
-            else:
-                artificial[user, item] = rating / sum_sim
+    for item, user in product(range(ITEMS_COUNT), range(USERS_COUNT)):
+        rating = 0
+        all_user_ratings = train_set[train_set[:, 0] == user]
+        sum_sim = 0
+        for u, i, r, label in all_user_ratings:
+            sim1 = similarities[item, int(i)]
+            if (sim1 < THRESHOLD):
+                continue
+            rating = rating + r * sim1
+            sum_sim = sum_sim + sim1
+        if sum_sim == 0:
+            artificial[user, item] = -1
+        else:
+            artificial[user, item] = rating / sum_sim
+
+    ratings = {}
+    for u, i, _, _ in train_set:
+        if u not in ratings:
+            ratings[u] = []
+        ratings[u].append(i)
+
+    for u, i, _ in test_set:
+        if u not in ratings:
+            ratings[u] = []
+        ratings[u].append(i)
 
     artificial_data = []
-    for item in range(ITEMS_COUNT):
-        for user in range(USERS_COUNT):
-            if (artificial[user, item] != -1):
+
+    for item, user in product(range(ITEMS_COUNT), range(USERS_COUNT)):
+        if (artificial[user, item] != -1):
+            if user not in ratings or item not in ratings[user]:
                 artificial_data.append([user, item, artificial[user, item]])
 
     elapsed = time.time() - start_time

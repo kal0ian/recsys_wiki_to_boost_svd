@@ -46,7 +46,15 @@ class SVD():
         print("Training finished in: ", str(timedelta(seconds=elapsed)))
 
     def sgd(self, trainset):
-        artificial_lr = (sum(trainset[:,3]==0)/sum(trainset[:,3]==1))* self.lr_bu
+
+        if np.any(trainset[:,3] == 1) and np.any(trainset[:,3] == 0):
+            ratio = sum(trainset[:,3] == 1) / sum(trainset[:,3] == 0)
+            artificial_lr = ratio * self.lr_bu
+        else:
+            artificial_lr = self.lr_bu
+
+        print("Artificial Learning rate: %.8f" % artificial_lr)
+        print("Learning rate: %.8f" % self.lr_bu)
         # user biases
         cdef np.ndarray[np.double_t] bu
         # item biases
